@@ -12,9 +12,30 @@
 #    DualSpec.Enable
 #        Description: Enable or disable the .dualspec player command,
 #                     which unlocks Dual Talent Specialization for the
-#                     calling character. Requires level 10
+#                     calling character.
 #        Default:     1 - Enabled
 #                     0 - Disabled
 #
 
 DualSpec.Enable = 1
+
+#
+#    DualSpec.Cost
+#        Description: Price of Dual Talent Specialization, in gold.
+#                     When above 0, the player types .dualspec to see the
+#                     price and .dualspec confirm to pay and unlock.
+#                     0 makes it free and unlocks on the first .dualspec.
+#        Default:     1000 - Blizzard's price
+#
+
+DualSpec.Cost = 1000
+
+#
+#    DualSpec.MinLevel
+#        Description: Minimum character level for .dualspec. Independent of
+#                     the worldserver MinDualSpecLevel setting, which only
+#                     applies to the class trainer option.
+#        Default:     10
+#
+
+DualSpec.MinLevel = 10

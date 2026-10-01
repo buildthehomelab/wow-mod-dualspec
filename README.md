@@ -4,19 +4,21 @@
 
 # Module info
 
-- Name: mod-DualSpec
+- Name: mod-dualspec
 - License: GNU General Public License v3.0
+- Fork of [Lichborne-AC/mod-dualspec](https://github.com/Lichborne-AC/mod-dualspec)
+  with a configurable price and minimum level
 
 # Description
 
 Adds a single player chat command, `.dualspec`, which unlocks Dual Talent
-Specialization for the calling character. No trainer NPC, no 1000g cost —
-the player types the command and the second talent spec is enabled.
+Specialization for the calling character without visiting a class trainer.
+The price (gold) and the minimum level are set in the config.
 
-The unlock pathway mirrors the one used by `mod-npc-services` (the
-"Learn Dual Talents" gossip option): the relevant marker spells are
-learned, the dual-spec activation spell is cast, and
-`Player::UpdateSpecCount(2)` persists the change.
+The unlock casts the same two spells as the core's class trainer gossip
+(`GOSSIP_OPTION_LEARNDUALSPEC`): 63680 teaches the Activate Primary/Secondary
+Spec spells, and 63624 raises the spec count to 2 through
+`Player::UpdateSpecCount`, which saves it to the character DB.
 
 # Usage
 
@@ -26,16 +28,19 @@ In-game, type:
 .dualspec
 ```
 
-Behavior:
+With `DualSpec.Cost` above 0, `.dualspec` shows the price and
+`.dualspec confirm` pays it and unlocks. With a cost of 0, `.dualspec` unlocks
+straight away.
 
-- If the server has the module disabled in config → player is told it's disabled.
-- If the player is in combat → command refuses.
-- If the player already has 2 specs → command reports "already unlocked" and exits.
-- If the player is below **level 10** → command refuses (talent points are not
-  awarded below level 10, so dual spec has nothing to spend).
-- Otherwise → second talent spec is enabled and persisted to the character DB.
+The command refuses when:
 
-The command is idempotent: once unlocked, repeated calls do nothing.
+- the module is disabled in config
+- the character already has two specs
+- the character is below `DualSpec.MinLevel`
+- the character is dead or in combat
+- the character can't afford `DualSpec.Cost`
+
+If the unlock fails for any reason, the money is refunded.
 
 # Module integration
 
@@ -46,28 +51,33 @@ The command is idempotent: once unlocked, repeated calls do nothing.
 
 # How to install
 
-1. Place this module under the `modules` folder of your AzerothCore source folder.
-2. Re-run CMake and rebuild AzerothCore.
-3. `make install`.
+The repo has a `wow-` prefix; the module folder must not. AzerothCore derives
+the loader name from the folder.
+
+```bash
+cd modules
+git clone https://github.com/buildthehomelab/wow-mod-dualspec.git mod-dualspec
+```
+
+Then re-run CMake, rebuild, and `make install`.
 
 # Configuration
 
-The module ships with one configuration key:
+Copy `mod_dualspec.conf.dist` to `mod_dualspec.conf` in your server's
+`etc/modules/` directory and edit:
 
-- `DualSpec.Enable` — `1` (default) enables the `.dualspec` command;
-  `0` disables it (the command will tell the player it's disabled).
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `DualSpec.Enable` | `1` | `0` disables the command |
+| `DualSpec.Cost` | `1000` | Price in gold; `0` makes it free |
+| `DualSpec.MinLevel` | `10` | Minimum character level |
 
-To change it, copy `mod_dualspec.conf.dist` to `mod_dualspec.conf` in your
-server's `etc/modules/` directory and edit the value. Default settings work
-out of the box; no edit is required.
-
-The minimum level requirement (10) is hardcoded.
+`DualSpec.MinLevel` is separate from the worldserver `MinDualSpecLevel`, which
+only controls the class trainer option.
 
 # Credits
 
-* The dual-spec unlock pathway is based on the implementation in
-  [`mod-npc-services`](https://github.com/azerothcore/mod-npc-services)
-  (Learn Dual Talents gossip option).
+* Original module: [Lichborne-AC/mod-dualspec](https://github.com/Lichborne-AC/mod-dualspec)
 * AzerothCore: [repository](https://github.com/azerothcore) -
   [website](http://azerothcore.org/) -
   [discord](https://discord.gg/PaqQRkd)
