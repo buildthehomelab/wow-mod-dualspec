@@ -3,7 +3,8 @@
  * GNU General Public License v3.0: https://www.gnu.org/licenses/gpl-3.0.html
  *
  * Adds the .dualspec player command, which unlocks Dual Talent
- * Specialization for the calling character. Uses the same unlock pathway
+ * Specialization for the calling character, and DualSpec.AutoUnlock, which
+ * unlocks it for free on login and level-up. Uses the same unlock pathway
  * as the core's class trainer gossip (GOSSIP_OPTION_LEARNDUALSPEC).
  */
 
@@ -29,6 +30,20 @@ namespace
     {
         uint64 copper = uint64(sConfigMgr->GetOption<uint32>("DualSpec.Cost", 1000)) * GOLD;
         return uint32(std::min<uint64>(copper, MAX_MONEY_AMOUNT));
+    }
+
+    uint32 GetMinLevel()
+    {
+        return sConfigMgr->GetOption<uint32>("DualSpec.MinLevel", 10);
+    }
+
+    // Same casts as the trainer gossip; both target self and must be cast by the player.
+    // Returns whether the character now has two specs.
+    bool UnlockDualSpec(Player* player)
+    {
+        player->CastSpell(player, SPELL_TEACH_SPEC_SWITCHES, true, nullptr, nullptr, player->GetGUID());
+        player->CastSpell(player, SPELL_LEARN_SECOND_SPEC, true, nullptr, nullptr, player->GetGUID());
+        return player->GetSpecsCount() >= 2;
     }
 
     std::string FormatMoney(uint32 copper)
@@ -80,7 +95,7 @@ public:
             return true;
         }
 
-        uint32 minLevel = sConfigMgr->GetOption<uint32>("DualSpec.MinLevel", 10);
+        uint32 minLevel = GetMinLevel();
         if (player->GetLevel() < minLevel)
         {
             handler->PSendSysMessage("|cffFF0000You must be at least level {} to use .dualspec.|r", minLevel);
@@ -116,12 +131,8 @@ public:
         if (cost)
             player->ModifyMoney(-int32(cost));
 
-        // Same casts as the trainer gossip; both target self and must be cast by the player.
-        player->CastSpell(player, SPELL_TEACH_SPEC_SWITCHES, true, nullptr, nullptr, player->GetGUID());
-        player->CastSpell(player, SPELL_LEARN_SECOND_SPEC, true, nullptr, nullptr, player->GetGUID());
-
         // Safety net in case a spell was blocked: the spec count is what matters.
-        if (player->GetSpecsCount() < 2)
+        if (!UnlockDualSpec(player))
         {
             if (cost)
                 player->ModifyMoney(int32(cost));
@@ -134,7 +145,41 @@ public:
     }
 };
 
+class dualspec_playerscript : public PlayerScript
+{
+public:
+    dualspec_playerscript() : PlayerScript("dualspec_playerscript", {
+        PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_LEVEL_CHANGED
+    }) { }
+
+    // Login covers new characters and ones made before AutoUnlock was turned on.
+    void OnPlayerLogin(Player* player) override
+    {
+        TryAutoUnlock(player);
+    }
+
+    void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    {
+        TryAutoUnlock(player);
+    }
+
+private:
+    static void TryAutoUnlock(Player* player)
+    {
+        if (!sConfigMgr->GetOption<bool>("DualSpec.AutoUnlock", false))
+            return;
+
+        if (player->GetSpecsCount() >= 2 || player->GetLevel() < GetMinLevel())
+            return;
+
+        if (UnlockDualSpec(player))
+            ChatHandler(player->GetSession()).SendSysMessage("|cff4CFF00Dual Talent Specialization unlocked!|r");
+    }
+};
+
 void AddDualSpecCommandScripts()
 {
     new dualspec_commandscript();
+    new dualspec_playerscript();
 }

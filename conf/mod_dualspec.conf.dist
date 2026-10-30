@@ -32,10 +32,24 @@ DualSpec.Cost = 1000
 
 #
 #    DualSpec.MinLevel
-#        Description: Minimum character level for .dualspec. Independent of
-#                     the worldserver MinDualSpecLevel setting, which only
-#                     applies to the class trainer option.
+#        Description: Minimum character level for .dualspec and for
+#                     DualSpec.AutoUnlock. Independent of the worldserver
+#                     MinDualSpecLevel setting, which only applies to the
+#                     class trainer option.
 #        Default:     10
 #
 
 DualSpec.MinLevel = 10
+
+#
+#    DualSpec.AutoUnlock
+#        Description: Unlock Dual Talent Specialization for free, with no
+#                     command, on login and on level-up for every character
+#                     at or above DualSpec.MinLevel. With DualSpec.MinLevel 1
+#                     every character has it from creation. Characters that
+#                     already have it are left alone.
+#        Default:     0 - Disabled
+#                     1 - Enabled
+#
+
+DualSpec.AutoUnlock = 0

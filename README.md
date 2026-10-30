@@ -7,13 +7,15 @@
 - Name: mod-dualspec
 - License: GNU General Public License v3.0
 - Fork of [Lichborne-AC/mod-dualspec](https://github.com/Lichborne-AC/mod-dualspec)
-  with a configurable price and minimum level
+  with a configurable price, minimum level and an automatic unlock
 
 # Description
 
 Adds a single player chat command, `.dualspec`, which unlocks Dual Talent
 Specialization for the calling character without visiting a class trainer.
-The price (gold) and the minimum level are set in the config.
+The price (gold) and the minimum level are set in the config. With
+`DualSpec.AutoUnlock = 1` the command isn't needed: every character at or
+above the minimum level gets dual spec for free on login and on level-up.
 
 The unlock casts the same two spells as the core's class trainer gossip
 (`GOSSIP_OPTION_LEARNDUALSPEC`): 63680 teaches the Activate Primary/Secondary
@@ -42,12 +44,20 @@ The command refuses when:
 
 If the unlock fails for any reason, the money is refunded.
 
+## Automatic unlock
+
+`DualSpec.AutoUnlock = 1` unlocks dual spec for free, with no command, when a
+character logs in or levels up at or above `DualSpec.MinLevel`. Set
+`DualSpec.MinLevel = 1` to give every character dual spec from creation;
+existing characters get it on their next login.
+
 # Module integration
 
 - Includes configuration (.conf)?: Yes, copied by CMake
 - Includes SQL patches?: No
 - Core hooks used:
     + CommandScript (registers `.dualspec`, `SEC_PLAYER`, in-game only)
+    + PlayerScript (`OnPlayerLogin`, `OnPlayerLevelChanged` for `DualSpec.AutoUnlock`)
 
 # How to install
 
@@ -70,7 +80,8 @@ Copy `mod_dualspec.conf.dist` to `mod_dualspec.conf` in your server's
 | --- | --- | --- |
 | `DualSpec.Enable` | `1` | `0` disables the command |
 | `DualSpec.Cost` | `1000` | Price in gold; `0` makes it free |
-| `DualSpec.MinLevel` | `10` | Minimum character level |
+| `DualSpec.MinLevel` | `10` | Minimum character level (command and auto unlock) |
+| `DualSpec.AutoUnlock` | `0` | `1` unlocks dual spec for free on login and level-up |
 
 `DualSpec.MinLevel` is separate from the worldserver `MinDualSpecLevel`, which
 only controls the class trainer option.
