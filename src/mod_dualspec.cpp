@@ -13,8 +13,11 @@
 #include "Chat.h"
 #include "ChatCommand.h"
 #include "Player.h"
+#include "WorldSession.h"
 
 #include <algorithm>
+#include <type_traits>
+#include <utility>
 
 using namespace Acore::ChatCommands;
 
@@ -30,6 +33,32 @@ namespace
     {
         uint64 copper = uint64(sConfigMgr->GetOption<uint32>("DualSpec.Cost", 1000)) * GOLD;
         return uint32(std::min<uint64>(copper, MAX_MONEY_AMOUNT));
+    }
+
+    // Bots are sessions without a socket. AzerothCore marks them with WorldSession::IsHeadless();
+    // older playerbots core forks have WorldSession::IsBot() instead, and older stock cores have
+    // neither. Looking for both at compile time lets the module build on all of them.
+    template <typename Session, typename = void>
+    struct HasIsHeadless : std::false_type { };
+
+    template <typename Session>
+    struct HasIsHeadless<Session, std::void_t<decltype(std::declval<Session&>().IsHeadless())>> : std::true_type { };
+
+    template <typename Session, typename = void>
+    struct HasIsBot : std::false_type { };
+
+    template <typename Session>
+    struct HasIsBot<Session, std::void_t<decltype(std::declval<Session&>().IsBot())>> : std::true_type { };
+
+    template <typename Session>
+    bool IsBotSession(Session* session)
+    {
+        if constexpr (HasIsHeadless<Session>::value)
+            return session->IsHeadless();
+        else if constexpr (HasIsBot<Session>::value)
+            return session->IsBot();
+        else
+            return false;
     }
 
     uint32 GetMinLevel()
@@ -170,11 +199,16 @@ private:
         if (!sConfigMgr->GetOption<bool>("DualSpec.AutoUnlock", false))
             return;
 
+        // Playerbots manage their own talents; a second spec they never asked for can confuse them.
+        WorldSession* session = player->GetSession();
+        if (!session || IsBotSession(session))
+            return;
+
         if (player->GetSpecsCount() >= 2 || player->GetLevel() < GetMinLevel())
             return;
 
         if (UnlockDualSpec(player))
-            ChatHandler(player->GetSession()).SendSysMessage("|cff4CFF00Dual Talent Specialization unlocked!|r");
+            ChatHandler(session).SendSysMessage("|cff4CFF00Dual Talent Specialization unlocked!|r");
     }
 };
 

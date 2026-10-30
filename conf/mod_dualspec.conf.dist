@@ -47,7 +47,8 @@ DualSpec.MinLevel = 10
 #                     command, on login and on level-up for every character
 #                     at or above DualSpec.MinLevel. With DualSpec.MinLevel 1
 #                     every character has it from creation. Characters that
-#                     already have it are left alone.
+#                     already have it are left alone. Bots (headless
+#                     sessions) are skipped.
 #        Default:     0 - Disabled
 #                     1 - Enabled
 #

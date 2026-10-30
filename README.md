@@ -49,7 +49,8 @@ If the unlock fails for any reason, the money is refunded.
 `DualSpec.AutoUnlock = 1` unlocks dual spec for free, with no command, when a
 character logs in or levels up at or above `DualSpec.MinLevel`. Set
 `DualSpec.MinLevel = 1` to give every character dual spec from creation;
-existing characters get it on their next login.
+existing characters get it on their next login. Bots (headless sessions,
+such as playerbots) are skipped.
 
 # Module integration
 
